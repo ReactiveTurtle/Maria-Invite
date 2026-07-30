@@ -385,87 +385,199 @@ h2 {
 
 .fountain-scene {
   position: relative;
-  width: 190px;
-  height: 128px;
-  margin: -4px auto 24px;
+  width: 230px;
+  height: 154px;
+  margin: -2px auto 26px;
+  filter: drop-shadow(0 12px 18px rgba(79, 119, 137, 0.16));
+}
+
+.fountain-glow {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  width: 188px;
+  height: 74px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(142, 211, 235, 0.42), transparent 67%);
+  transform: translateX(-50%);
 }
 
 .water-arc,
-.water-drop {
+.water-drop,
+.water-jet,
+.water-mist,
+.water-spark {
   position: absolute;
   left: 50%;
 }
 
+.water-jet {
+  bottom: 76px;
+  width: 9px;
+  height: 64px;
+  border-radius: 999px 999px 45% 45%;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.78), rgba(135, 210, 235, 0.76) 42%, rgba(78, 164, 205, 0.48));
+  box-shadow: 0 0 14px rgba(142, 211, 235, 0.56);
+  opacity: 0.9;
+  transform-origin: 50% 100%;
+  animation: jet-flow 1.35s ease-in-out infinite;
+}
+
+.jet-center {
+  height: 78px;
+  transform: translateX(-50%);
+}
+
+.jet-left {
+  height: 64px;
+  transform: translateX(-50%) rotate(-22deg);
+  animation-delay: 120ms;
+}
+
+.jet-right {
+  height: 64px;
+  transform: translateX(-50%) rotate(22deg);
+  animation-delay: 240ms;
+}
+
 .water-arc {
-  bottom: 48px;
-  width: 58px;
-  height: 58px;
-  border: 4px solid transparent;
-  border-top-color: rgba(118, 189, 223, 0.82);
+  bottom: 58px;
+  width: 72px;
+  height: 72px;
+  border: 5px solid transparent;
+  border-top-color: rgba(118, 189, 223, 0.88);
+  border-left-color: rgba(192, 232, 244, 0.34);
   border-radius: 50%;
-  opacity: 0.35;
+  opacity: 0.42;
   animation: arc-pulse 1.45s ease-in-out infinite;
 }
 
 .arc-left {
-  transform: translateX(-65px) rotate(-34deg);
+  transform: translateX(-82px) rotate(-34deg);
 }
 
 .arc-center {
-  width: 72px;
-  height: 72px;
-  transform: translateX(-36px);
+  width: 92px;
+  height: 92px;
+  border-width: 6px;
+  transform: translateX(-46px);
   animation-delay: 120ms;
 }
 
 .arc-right {
-  transform: translateX(7px) rotate(34deg);
+  transform: translateX(10px) rotate(34deg);
   animation-delay: 240ms;
 }
 
 .water-drop {
-  bottom: 45px;
-  width: 10px;
-  height: 10px;
+  bottom: 54px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
-  background: #76bddf;
+  background: radial-gradient(circle at 32% 28%, white 0 18%, #8ed3eb 19% 100%);
   opacity: 0;
   animation: water-jump 1.45s ease-in-out infinite;
 }
 
 .drop-left {
-  --drop-x: -52px;
-  --drop-peak-x: -34px;
-  --drop-peak-y: -62px;
-  --drop-end-x: -18px;
+  --drop-x: -66px;
+  --drop-peak-x: -42px;
+  --drop-peak-y: -74px;
+  --drop-end-x: -22px;
 }
 
 .drop-center {
   --drop-x: -5px;
   --drop-peak-x: -5px;
-  --drop-peak-y: -84px;
+  --drop-peak-y: -100px;
   --drop-end-x: -5px;
   animation-delay: 120ms;
 }
 
 .drop-right {
-  --drop-x: 42px;
-  --drop-peak-x: 26px;
-  --drop-peak-y: -62px;
-  --drop-end-x: 10px;
+  --drop-x: 54px;
+  --drop-peak-x: 34px;
+  --drop-peak-y: -74px;
+  --drop-end-x: 14px;
   animation-delay: 240ms;
+}
+
+.water-spark {
+  bottom: 88px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(232, 250, 255, 0.9);
+  box-shadow: 0 0 9px rgba(142, 211, 235, 0.85);
+  animation: sparkle 1.9s ease-in-out infinite;
+}
+
+.spark-left {
+  --spark-x: -58px;
+}
+
+.spark-center {
+  bottom: 116px;
+  --spark-x: -3px;
+  animation-delay: 260ms;
+}
+
+.spark-right {
+  --spark-x: 52px;
+  animation-delay: 520ms;
+}
+
+.water-mist {
+  bottom: 116px;
+  width: 30px;
+  height: 13px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.86) 0 18%, rgba(152, 218, 238, 0.42) 19% 58%, transparent 59%);
+  opacity: 0.72;
+  animation: mist-breathe 1.7s ease-in-out infinite;
+}
+
+.mist-left {
+  transform: translateX(-58px) rotate(-8deg);
+}
+
+.mist-center {
+  bottom: 138px;
+  transform: translateX(-15px);
+  animation-delay: 160ms;
+}
+
+.mist-right {
+  transform: translateX(28px) rotate(8deg);
+  animation-delay: 320ms;
+}
+
+.fountain-stem {
+  position: absolute;
+  left: 50%;
+  bottom: 34px;
+  width: 26px;
+  height: 58px;
+  border-radius: 14px 14px 7px 7px;
+  background: linear-gradient(90deg, #c99278, #efd1ba 48%, #bd8268);
+  transform: translateX(-50%);
 }
 
 .fountain-bowl {
   position: absolute;
   left: 50%;
-  bottom: 21px;
-  width: 142px;
-  height: 42px;
-  border: 4px solid #d5aa92;
+  bottom: 23px;
+  width: 166px;
+  height: 48px;
+  border: 5px solid #d5aa92;
   border-top: 0;
-  border-radius: 0 0 70px 70px;
-  background: linear-gradient(#bfe4f2 0 45%, #fff6ea 46%);
+  border-radius: 0 0 84px 84px;
+  background:
+    repeating-radial-gradient(ellipse at 50% 10%, rgba(78, 164, 205, 0.22) 0 2px, transparent 3px 10px),
+    radial-gradient(ellipse at 50% 4%, rgba(255, 255, 255, 0.78) 0 22%, transparent 23%),
+    linear-gradient(#bfe4f2 0 43%, #fff6ea 44% 100%);
+  box-shadow: inset 0 -8px 0 rgba(180, 118, 91, 0.14);
   transform: translateX(-50%);
 }
 
@@ -473,10 +585,11 @@ h2 {
   position: absolute;
   left: 50%;
   bottom: 0;
-  width: 72px;
-  height: 24px;
-  border-radius: 14px 14px 6px 6px;
-  background: #d5aa92;
+  width: 96px;
+  height: 28px;
+  border-radius: 18px 18px 7px 7px;
+  background: linear-gradient(90deg, #b9795f, #e1b79d 45%, #b9795f);
+  box-shadow: inset 0 -5px 0 rgba(112, 57, 37, 0.12);
   transform: translateX(-50%);
 }
 
@@ -510,6 +623,42 @@ h2 {
   100% {
     transform: translate(var(--drop-end-x), 18px) scale(0.8);
     opacity: 0;
+  }
+}
+
+@keyframes jet-flow {
+  0%, 100% {
+    opacity: 0.72;
+    clip-path: inset(14% 0 0 0 round 999px);
+  }
+
+  50% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0 round 999px);
+  }
+}
+
+@keyframes mist-breathe {
+  0%, 100% {
+    opacity: 0.35;
+    scale: 0.86;
+  }
+
+  50% {
+    opacity: 0.82;
+    scale: 1.08;
+  }
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0.18;
+    transform: translateX(var(--spark-x, 0)) scale(0.75);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateX(var(--spark-x, 0)) scale(1.2);
   }
 }
 

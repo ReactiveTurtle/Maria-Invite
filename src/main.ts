@@ -632,19 +632,30 @@ export class SnakeGameComponent {
 
           @if (currentQuestion().kicker === 'У фонтана') {
             <div class="fountain-scene" aria-hidden="true">
+              <span class="fountain-glow"></span>
+              <span class="water-jet jet-center"></span>
+              <span class="water-jet jet-left"></span>
+              <span class="water-jet jet-right"></span>
               <span class="water-arc arc-left"></span>
               <span class="water-arc arc-center"></span>
               <span class="water-arc arc-right"></span>
               <span class="water-drop drop-left"></span>
               <span class="water-drop drop-center"></span>
               <span class="water-drop drop-right"></span>
+              <span class="water-mist mist-left"></span>
+              <span class="water-mist mist-center"></span>
+              <span class="water-mist mist-right"></span>
+              <span class="water-spark spark-left"></span>
+              <span class="water-spark spark-center"></span>
+              <span class="water-spark spark-right"></span>
+              <span class="fountain-stem"></span>
               <span class="fountain-bowl"></span>
               <span class="fountain-base"></span>
             </div>
           }
 
           <div class="answers" role="group" aria-label="Варианты ответа">
-            @for (answer of currentQuestion().answers; track answer) {
+            @for (answer of shuffledAnswers(currentQuestion()); track answer) {
               <button type="button" [ngClass]="answerClass(answer)" (click)="chooseAnswer(answer)">
                 {{ answer }}
               </button>
@@ -987,6 +998,10 @@ export class AppComponent {
     return questions[this.questionIndex()];
   }
 
+  protected shuffledAnswers(question: Question): readonly string[] {
+    return [...question.answers].sort((first, second) => this.answerHash(first) - this.answerHash(second));
+  }
+
   protected chooseAnswer(answer: string): void {
     if (this.answerState() === 'right') {
       return;
@@ -1104,6 +1119,16 @@ export class AppComponent {
       correct: isSelected && this.answerState() === 'right',
       incorrect: isSelected && this.answerState() === 'wrong'
     };
+  }
+
+  private answerHash(answer: string): number {
+    let hash = 0;
+
+    for (let index = 0; index < answer.length; index++) {
+      hash = (hash * 31 + answer.charCodeAt(index)) >>> 0;
+    }
+
+    return hash;
   }
 
   private openQuestion(index: number): void {
