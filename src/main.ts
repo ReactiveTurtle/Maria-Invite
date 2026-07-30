@@ -200,7 +200,7 @@ function samePoint(first: Point, second: Point): boolean {
         <p class="eyebrow">Мини-игра</p>
         <h2>А помнишь этот уровень?</h2>
         @if (showPathHints()) {
-          <p class="hint game-hint">Подсказка WASD: DDWASAAAAAWAAAWAWDDWAASDSDDDSDDWWDWDWWDD</p>
+          <p class="hint game-hint">Я буду показывать следующую стрелку прямо на поле.</p>
         }
       </div>
 
@@ -223,12 +223,17 @@ function samePoint(first: Point, second: Point): boolean {
                 @if (isTarget(column, row)) {
                   <span class="target-mark"></span>
                 }
-                @let hint = pathHint(column, row);
-                @if (showPathHints() && hint) {
-                  <span class="path-hint">{{ hint }}</span>
-                }
               </span>
             }
+          }
+          @if (currentPathHint(); as hint) {
+            <span
+              class="path-hint"
+              [style.--x]="snake()[0].x"
+              [style.--y]="snake()[0].y"
+            >
+              {{ hint }}
+            </span>
           }
           @for (part of snake(); track $index; let index = $index) {
             <span
@@ -251,11 +256,15 @@ function samePoint(first: Point, second: Point): boolean {
             <button type="button" class="control down" aria-label="Вниз" (click)="move(0, 1)">↓</button>
           </div>
 
+          @if (!showPathHints() && !won()) {
+            <button type="button" class="help-button" (click)="askForHelp()">Дениска помоги!</button>
+          }
+
           <button type="button" class="reset-button" (click)="reset()">Начать заново</button>
 
           @if (won()) {
             <button type="button" class="primary-button" (click)="continueToSurprise()">
-              Дальше
+              Я умничка!
             </button>
           }
         </div>
@@ -313,8 +322,7 @@ export class SnakeGameComponent {
     }
 
     if (this.isBlocked(nextHead, currentSnake)) {
-      this.status.set('Туда двигаться нельзя. Попробуй по стрелке.');
-      this.showPathHints.set(true);
+      this.reset('Туда двигаться нельзя. Попробуй ещё раз — теперь я покажу стрелки.', true);
       return;
     }
 
@@ -375,6 +383,10 @@ export class SnakeGameComponent {
     this.completed.emit();
   }
 
+  protected askForHelp(): void {
+    this.reset('Я рядом. Иди по стрелочкам на поле.', true);
+  }
+
   protected remainingApples(): number {
     return this.remainingApplePositions().length;
   }
@@ -401,15 +413,15 @@ export class SnakeGameComponent {
     return samePoint(target, { x, y });
   }
 
-  protected pathHint(x: number, y: number): string | null {
-    if (this.moving()) {
+  protected currentPathHint(): string | null {
+    if (!this.showPathHints() || this.moving()) {
       return null;
     }
 
     const hint = pathHints[this.moveStep()];
     const head = this.snake()[0];
 
-    if (!hint || !samePoint(hint, head) || !samePoint(head, { x, y })) {
+    if (!hint || !samePoint(hint, head)) {
       return null;
     }
 

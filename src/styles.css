@@ -694,16 +694,23 @@ h2 {
 }
 
 .path-hint {
-  z-index: 4;
-  width: 72%;
-  aspect-ratio: 1;
+  position: absolute;
+  z-index: 8;
+  top: 0;
+  left: 0;
+  width: calc(100% / var(--board-columns));
+  height: calc(100% / var(--board-rows));
   display: grid;
   place-items: center;
-  border-radius: 50%;
+  border: 3px solid rgba(255, 250, 242, 0.95);
+  border-radius: 13px;
   color: var(--ink);
-  background: rgba(255, 250, 242, 0.9);
+  background: rgba(255, 250, 242, 0.76);
+  box-shadow: 0 3px 10px rgba(70, 40, 24, 0.22);
   font-size: clamp(0.85rem, 2vw, 1.2rem);
   font-weight: 700;
+  transform: translate(calc(var(--x) * 100%), calc(var(--y) * 100%));
+  pointer-events: none;
 }
 
 .game-panel {
@@ -735,7 +742,8 @@ h2 {
 }
 
 .control,
-.reset-button {
+.reset-button,
+.help-button {
   border: 0;
   color: white;
   background: #5799b9;
@@ -757,9 +765,25 @@ h2 {
   border-radius: 11px;
 }
 
+.help-button {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 15px;
+  border-radius: 13px;
+  color: white;
+  background: linear-gradient(135deg, #e04f2f, #f19a3e);
+  font-weight: 800;
+  box-shadow: 0 10px 20px rgba(224, 79, 47, 0.24);
+}
+
 .control:hover,
 .control:focus-visible {
   background: #3e7f9f;
+}
+
+.help-button:hover,
+.help-button:focus-visible {
+  background: linear-gradient(135deg, #c83e25, #e7832d);
 }
 
 .up { grid-area: up; }
