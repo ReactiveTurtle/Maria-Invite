@@ -730,15 +730,27 @@ h2 {
   text-align: center;
 }
 
+.game-status-help {
+  padding: 9px 12px;
+  border: 2px solid rgba(224, 79, 47, 0.42);
+  border-radius: 13px;
+  color: #9f2f20;
+  background: #fff0dc;
+  font-weight: 800;
+}
+
 .game-controls {
-  width: 150px;
+  position: absolute;
+  z-index: 9;
+  right: 12px;
+  bottom: 12px;
+  width: 186px;
   display: grid;
   grid-template-areas:
     ". up ."
     "left . right"
     ". down .";
-  gap: 9px;
-  margin: 0 auto;
+  gap: 11px;
 }
 
 .control,
@@ -746,17 +758,18 @@ h2 {
 .help-button {
   border: 0;
   color: white;
-  background: #5799b9;
+  background: rgba(87, 153, 185, 0.36);
   cursor: pointer;
 }
 
 .control {
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  font-size: 1.35rem;
+  font-size: 1.65rem;
   font-weight: 700;
   line-height: 1;
+  backdrop-filter: blur(4px);
   box-shadow: 0 5px 12px rgba(62, 127, 159, 0.2);
 }
 
@@ -776,14 +789,28 @@ h2 {
   box-shadow: 0 10px 20px rgba(224, 79, 47, 0.24);
 }
 
+.help-button-active {
+  outline: 3px solid rgba(255, 250, 242, 0.95);
+  outline-offset: 3px;
+  background: linear-gradient(135deg, #d92727, #ffb000);
+  box-shadow:
+    0 0 0 5px rgba(224, 79, 47, 0.18),
+    0 12px 24px rgba(224, 79, 47, 0.32);
+}
+
 .control:hover,
 .control:focus-visible {
-  background: #3e7f9f;
+  background: rgba(62, 127, 159, 0.68);
 }
 
 .help-button:hover,
 .help-button:focus-visible {
   background: linear-gradient(135deg, #c83e25, #e7832d);
+}
+
+.help-button-active:hover,
+.help-button-active:focus-visible {
+  background: linear-gradient(135deg, #c91f1f, #f0a000);
 }
 
 .up { grid-area: up; }

@@ -25,8 +25,13 @@ interface Point {
   readonly y: number;
 }
 
-interface PathHint extends Point {
+interface MoveDirection extends Point {
   readonly arrow: string;
+}
+
+interface GameState {
+  readonly snake: readonly Point[];
+  readonly applePositions: readonly Point[];
 }
 
 interface Question {
@@ -143,47 +148,11 @@ const apples = findLevelCells('Я');
 const bricks = findLevelCells('Б');
 const saws = findLevelCells('П');
 const target = findLevelCells('Д')[0];
-const pathHints: readonly PathHint[] = [
-  { x: 9, y: 5, arrow: '→' },
-  { x: 10, y: 5, arrow: '→' },
-  { x: 11, y: 5, arrow: '↑' },
-  { x: 11, y: 4, arrow: '←' },
-  { x: 10, y: 4, arrow: '↓' },
-  { x: 10, y: 5, arrow: '←' },
-  { x: 9, y: 5, arrow: '←' },
-  { x: 8, y: 5, arrow: '←' },
-  { x: 7, y: 5, arrow: '←' },
-  { x: 6, y: 5, arrow: '←' },
-  { x: 5, y: 5, arrow: '↑' },
-  { x: 5, y: 4, arrow: '←' },
-  { x: 4, y: 4, arrow: '←' },
-  { x: 3, y: 4, arrow: '←' },
-  { x: 2, y: 4, arrow: '↑' },
-  { x: 2, y: 3, arrow: '←' },
-  { x: 1, y: 3, arrow: '↑' },
-  { x: 1, y: 2, arrow: '→' },
-  { x: 2, y: 2, arrow: '→' },
-  { x: 3, y: 2, arrow: '↑' },
-  { x: 3, y: 1, arrow: '←' },
-  { x: 2, y: 1, arrow: '←' },
-  { x: 1, y: 1, arrow: '↓' },
-  { x: 1, y: 3, arrow: '→' },
-  { x: 2, y: 3, arrow: '↓' },
-  { x: 2, y: 4, arrow: '→' },
-  { x: 3, y: 4, arrow: '→' },
-  { x: 4, y: 4, arrow: '→' },
-  { x: 5, y: 4, arrow: '↓' },
-  { x: 5, y: 5, arrow: '→' },
-  { x: 6, y: 5, arrow: '→' },
-  { x: 7, y: 5, arrow: '↑' },
-  { x: 7, y: 4, arrow: '↑' },
-  { x: 7, y: 3, arrow: '→' },
-  { x: 8, y: 3, arrow: '↑' },
-  { x: 8, y: 2, arrow: '→' },
-  { x: 9, y: 2, arrow: '↑' },
-  { x: 9, y: 1, arrow: '↑' },
-  { x: 9, y: 0, arrow: '→' },
-  { x: 10, y: 0, arrow: '→' }
+const moveDirections: readonly MoveDirection[] = [
+  { x: 0, y: -1, arrow: '↑' },
+  { x: -1, y: 0, arrow: '←' },
+  { x: 1, y: 0, arrow: '→' },
+  { x: 0, y: 1, arrow: '↓' }
 ];
 
 function samePoint(first: Point, second: Point): boolean {
@@ -244,10 +213,6 @@ function samePoint(first: Point, second: Point): boolean {
               aria-hidden="true"
             ></span>
           }
-        </div>
-
-        <div class="game-panel">
-          <p class="game-status">{{ status() }}</p>
 
           <div class="game-controls" aria-label="Управление змейкой">
             <button type="button" class="control up" aria-label="Вверх" (click)="move(0, -1)">↑</button>
@@ -255,9 +220,26 @@ function samePoint(first: Point, second: Point): boolean {
             <button type="button" class="control right" aria-label="Вправо" (click)="move(1, 0)">→</button>
             <button type="button" class="control down" aria-label="Вниз" (click)="move(0, 1)">↓</button>
           </div>
+        </div>
 
-          @if (!showPathHints() && !won()) {
-            <button type="button" class="help-button" (click)="askForHelp()">Дениска помоги!</button>
+        <div class="game-panel">
+          @if (showPathHints()) {
+            <p class="game-status game-status-help">
+              Я рядом. Иди по стрелочкам на поле.
+            </p>
+          } @else {
+            <p class="game-status">{{ status() }}</p>
+          }
+
+          @if (!won()) {
+            <button
+              type="button"
+              class="help-button"
+              [class.help-button-active]="showPathHints()"
+              (click)="askForHelp()"
+            >
+              Дениска помоги!
+            </button>
           }
 
           <button type="button" class="reset-button" (click)="reset()">Начать заново</button>
@@ -281,7 +263,6 @@ export class SnakeGameComponent {
   protected readonly remainingApplePositions = signal<readonly Point[]>(apples);
   protected readonly status = signal('Доберись до яблок, наращивай длину и помни о гравитации.');
   protected readonly showPathHints = signal(false);
-  protected readonly moveStep = signal(0);
   protected readonly won = signal(false);
   protected readonly moving = signal(false);
 
@@ -317,17 +298,18 @@ export class SnakeGameComponent {
     const nextHead = { x: head.x + deltaX, y: head.y + deltaY };
 
     if (this.isSaw(nextHead.x, nextHead.y)) {
-      this.reset('Пила завершила попытку. Попробуй ещё раз — теперь я покажу стрелки.', true);
+      this.handleFailedMove(currentSnake);
       return;
     }
 
     if (this.isBlocked(nextHead, currentSnake)) {
-      this.reset('Туда двигаться нельзя. Попробуй ещё раз — теперь я покажу стрелки.', true);
+      this.handleBlockedMove();
       return;
     }
 
     this.moving.set(true);
 
+    const currentApplePositions = this.remainingApplePositions();
     const ateApple = this.isApple(nextHead.x, nextHead.y);
     const nextSnake = [nextHead, ...currentSnake];
 
@@ -348,7 +330,7 @@ export class SnakeGameComponent {
     const fallenSnake = await this.applyGravity(nextSnake);
 
     if (!fallenSnake) {
-      this.reset('Гравитация утащила змейку в пилу или за край. Попробуй ещё раз — теперь я покажу стрелки.', true);
+      this.reset(this.showPathHints() ? 'Давай заново, ты пошла не туда, солнышко' : 'Попробуй ещё раз — теперь я покажу стрелки.', true);
       return;
     }
 
@@ -358,14 +340,24 @@ export class SnakeGameComponent {
     }
 
     if (deltaY === -1 && fallenSnake[0].y >= head.y) {
-      this.status.set('Длины пока не хватает, чтобы подняться выше. Сначала съешь яблоко.');
-    } else if (ateApple) {
+      this.snake.set(currentSnake);
+      this.remainingApplePositions.set(currentApplePositions);
+      this.moving.set(false);
+      this.status.set('Вверх так не получится. Нужна опора, чтобы подняться выше.');
+      return;
+    }
+
+    if (this.showPathHints() && !this.findNextWinningMove({ snake: fallenSnake, applePositions: this.remainingApplePositions() })) {
+      this.reset('Давай заново, ты пошла не туда, солнышко', true);
+      return;
+    }
+
+    if (ateApple) {
       this.status.set('Яблоко съедено — змейка стала длиннее.');
     } else {
       this.status.set('Используй длину змейки как опору и помни о гравитации.');
     }
 
-    this.moveStep.update((step) => Math.min(step + 1, pathHints.length));
     this.moving.set(false);
   }
 
@@ -374,7 +366,6 @@ export class SnakeGameComponent {
     this.remainingApplePositions.set(apples);
     this.won.set(false);
     this.moving.set(false);
-    this.moveStep.set(0);
     this.status.set(message);
     this.showPathHints.set(showHints);
   }
@@ -384,7 +375,8 @@ export class SnakeGameComponent {
   }
 
   protected askForHelp(): void {
-    this.reset('Я рядом. Иди по стрелочкам на поле.', true);
+    this.status.set('Я рядом. Иди по стрелочкам на поле.');
+    this.showPathHints.set(true);
   }
 
   protected remainingApples(): number {
@@ -418,20 +410,140 @@ export class SnakeGameComponent {
       return null;
     }
 
-    const hint = pathHints[this.moveStep()];
-    const head = this.snake()[0];
-
-    if (!hint || !samePoint(hint, head)) {
-      return null;
-    }
-
-    return hint.arrow;
+    return this.findNextWinningMove({ snake: this.snake(), applePositions: this.remainingApplePositions() })?.arrow ?? null;
   }
 
   private isBlocked(point: Point, snake: readonly Point[]): boolean {
     const outsideBoard = point.x < 0 || point.x >= boardWidth || point.y < 0 || point.y >= boardHeight;
 
     return outsideBoard || this.isBrick(point.x, point.y) || snake.some((part) => samePoint(part, point));
+  }
+
+  private handleFailedMove(currentSnake: readonly Point[]): void {
+    if (this.showPathHints() && this.findNextWinningMove({ snake: currentSnake, applePositions: this.remainingApplePositions() })) {
+      this.status.set('Я рядом. Иди по стрелочкам на поле.');
+      return;
+    }
+
+    this.reset(this.showPathHints() ? 'Давай заново, ты пошла не туда, солнышко' : 'Попробуй ещё раз — теперь я покажу стрелки.', true);
+  }
+
+  private handleBlockedMove(): void {
+    if (this.showPathHints()) {
+      this.status.set('Я рядом. Иди по стрелочкам на поле.');
+      return;
+    }
+
+    this.status.set('Туда двигаться нельзя. Попробуй другой путь.');
+  }
+
+  private findNextWinningMove(initialState: GameState): MoveDirection | null {
+    const queue: { state: GameState; firstMove: MoveDirection | null }[] = [{ state: initialState, firstMove: null }];
+    const visited = new Set<string>([this.serializeState(initialState)]);
+
+    for (let index = 0; index < queue.length && index < 12000; index++) {
+      const current = queue[index];
+
+      for (const direction of this.availableMoveDirections(current.state.snake)) {
+        const next = this.simulateMove(current.state, direction);
+
+        if (next === 'won') {
+          return current.firstMove ?? direction;
+        }
+
+        if (!next) {
+          continue;
+        }
+
+        const key = this.serializeState(next);
+
+        if (visited.has(key)) {
+          continue;
+        }
+
+        visited.add(key);
+        queue.push({ state: next, firstMove: current.firstMove ?? direction });
+      }
+    }
+
+    return null;
+  }
+
+  private simulateMove(state: GameState, direction: MoveDirection): GameState | 'won' | null {
+    const currentSnake = state.snake;
+    const nextHead = { x: currentSnake[0].x + direction.x, y: currentSnake[0].y + direction.y };
+
+    if (this.isSaw(nextHead.x, nextHead.y) || this.isBlocked(nextHead, currentSnake)) {
+      return null;
+    }
+
+    const ateApple = state.applePositions.some((apple) => samePoint(apple, nextHead));
+    const nextApplePositions = ateApple ? state.applePositions.filter((apple) => !samePoint(apple, nextHead)) : state.applePositions;
+    const nextSnake = [nextHead, ...currentSnake];
+
+    if (!ateApple) {
+      nextSnake.pop();
+    }
+
+    if (samePoint(nextHead, target)) {
+      return 'won';
+    }
+
+    const fallenSnake = this.applyGravityToState(nextSnake, nextApplePositions);
+
+    if (!fallenSnake) {
+      return null;
+    }
+
+    if (samePoint(fallenSnake[0], target)) {
+      return 'won';
+    }
+
+    if (direction.y === -1 && fallenSnake[0].y >= currentSnake[0].y) {
+      return null;
+    }
+
+    return { snake: fallenSnake, applePositions: nextApplePositions };
+  }
+
+  private availableMoveDirections(snake: readonly Point[]): readonly MoveDirection[] {
+    const neck = snake[1];
+
+    if (!neck) {
+      return moveDirections;
+    }
+
+    const head = snake[0];
+
+    return moveDirections.filter((direction) => !samePoint({ x: head.x + direction.x, y: head.y + direction.y }, neck));
+  }
+
+  private applyGravityToState(snake: readonly Point[], applePositions: readonly Point[]): readonly Point[] | null {
+    let fallingSnake = snake.map((part) => ({ ...part }));
+
+    while (!fallingSnake.some((part) => this.isStateSupport(part.x, part.y + 1, applePositions))) {
+      fallingSnake = fallingSnake.map((part) => ({ x: part.x, y: part.y + 1 }));
+
+      if (fallingSnake.some((part) => part.y >= boardHeight || this.isSaw(part.x, part.y))) {
+        return null;
+      }
+    }
+
+    return fallingSnake;
+  }
+
+  private isStateSupport(x: number, y: number, applePositions: readonly Point[]): boolean {
+    return this.isBrick(x, y) || applePositions.some((apple) => samePoint(apple, { x, y }));
+  }
+
+  private serializeState(state: GameState): string {
+    const snakeKey = state.snake.map((part) => `${part.x},${part.y}`).join('|');
+    const applesKey = [...state.applePositions]
+      .map((apple) => `${apple.x},${apple.y}`)
+      .sort()
+      .join('|');
+
+    return `${snakeKey};${applesKey}`;
   }
 
   private async applyGravity(snake: readonly Point[]): Promise<readonly Point[] | null> {
