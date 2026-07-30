@@ -3,7 +3,7 @@ import { Component, HostListener, output, signal } from '@angular/core';
 import { NgClass } from '@angular/common';
 
 type AnswerState = 'idle' | 'right' | 'wrong';
-type Screen = 'intro' | 'quiz' | 'may23-arrival' | 'may23-embankment' | 'may23-fountain' | 'may23-library' | 'may31' | 'june06' | 'game' | 'surprise' | 'invitation';
+type Screen = 'intro' | 'quiz' | 'may23-arrival' | 'may23-embankment' | 'may23-fountain' | 'may23-library' | 'may31' | 'june06' | 'game' | 'challenge-complete' | 'surprise' | 'invitation';
 
 const screens: readonly Screen[] = [
   'intro',
@@ -15,6 +15,7 @@ const screens: readonly Screen[] = [
   'may31',
   'june06',
   'game',
+  'challenge-complete',
   'surprise',
   'invitation'
 ];
@@ -142,7 +143,48 @@ const apples = findLevelCells('Я');
 const bricks = findLevelCells('Б');
 const saws = findLevelCells('П');
 const target = findLevelCells('Д')[0];
-const pathHints: readonly PathHint[] = [];
+const pathHints: readonly PathHint[] = [
+  { x: 9, y: 5, arrow: '→' },
+  { x: 10, y: 5, arrow: '→' },
+  { x: 11, y: 5, arrow: '↑' },
+  { x: 11, y: 4, arrow: '←' },
+  { x: 10, y: 4, arrow: '↓' },
+  { x: 10, y: 5, arrow: '←' },
+  { x: 9, y: 5, arrow: '←' },
+  { x: 8, y: 5, arrow: '←' },
+  { x: 7, y: 5, arrow: '←' },
+  { x: 6, y: 5, arrow: '←' },
+  { x: 5, y: 5, arrow: '↑' },
+  { x: 5, y: 4, arrow: '←' },
+  { x: 4, y: 4, arrow: '←' },
+  { x: 3, y: 4, arrow: '←' },
+  { x: 2, y: 4, arrow: '↑' },
+  { x: 2, y: 3, arrow: '←' },
+  { x: 1, y: 3, arrow: '↑' },
+  { x: 1, y: 2, arrow: '→' },
+  { x: 2, y: 2, arrow: '→' },
+  { x: 3, y: 2, arrow: '↑' },
+  { x: 3, y: 1, arrow: '←' },
+  { x: 2, y: 1, arrow: '←' },
+  { x: 1, y: 1, arrow: '↓' },
+  { x: 1, y: 3, arrow: '→' },
+  { x: 2, y: 3, arrow: '↓' },
+  { x: 2, y: 4, arrow: '→' },
+  { x: 3, y: 4, arrow: '→' },
+  { x: 4, y: 4, arrow: '→' },
+  { x: 5, y: 4, arrow: '↓' },
+  { x: 5, y: 5, arrow: '→' },
+  { x: 6, y: 5, arrow: '→' },
+  { x: 7, y: 5, arrow: '↑' },
+  { x: 7, y: 4, arrow: '↑' },
+  { x: 7, y: 3, arrow: '→' },
+  { x: 8, y: 3, arrow: '↑' },
+  { x: 8, y: 2, arrow: '→' },
+  { x: 9, y: 2, arrow: '↑' },
+  { x: 9, y: 1, arrow: '↑' },
+  { x: 9, y: 0, arrow: '→' },
+  { x: 10, y: 0, arrow: '→' }
+];
 
 function samePoint(first: Point, second: Point): boolean {
   return first.x === second.x && first.y === second.y;
@@ -158,7 +200,7 @@ function samePoint(first: Point, second: Point): boolean {
         <p class="eyebrow">Мини-игра</p>
         <h2>А помнишь этот уровень?</h2>
         @if (showPathHints()) {
-          <p class="hint game-hint">Я оставил подсказки прямо на клетках: иди по стрелкам.</p>
+          <p class="hint game-hint">Подсказка WASD: DDWASAAAAAWAAAWAWDDWAASDSDDDSDDWWDWDWWDD</p>
         }
       </div>
 
@@ -210,6 +252,12 @@ function samePoint(first: Point, second: Point): boolean {
           </div>
 
           <button type="button" class="reset-button" (click)="reset()">Начать заново</button>
+
+          @if (won()) {
+            <button type="button" class="primary-button" (click)="continueToSurprise()">
+              Дальше
+            </button>
+          }
         </div>
       </div>
     </div>
@@ -224,6 +272,7 @@ export class SnakeGameComponent {
   protected readonly remainingApplePositions = signal<readonly Point[]>(apples);
   protected readonly status = signal('Доберись до яблок, наращивай длину и помни о гравитации.');
   protected readonly showPathHints = signal(false);
+  protected readonly moveStep = signal(0);
   protected readonly won = signal(false);
   protected readonly moving = signal(false);
 
@@ -259,12 +308,13 @@ export class SnakeGameComponent {
     const nextHead = { x: head.x + deltaX, y: head.y + deltaY };
 
     if (this.isSaw(nextHead.x, nextHead.y)) {
-      this.reset('Пила завершила попытку. Попробуй ещё раз.');
+      this.reset('Пила завершила попытку. Попробуй ещё раз — теперь я покажу стрелки.', true);
       return;
     }
 
     if (this.isBlocked(nextHead, currentSnake)) {
-      this.status.set('Туда двигаться нельзя. Попробуй другой путь.');
+      this.status.set('Туда двигаться нельзя. Попробуй по стрелке.');
+      this.showPathHints.set(true);
       return;
     }
 
@@ -290,7 +340,7 @@ export class SnakeGameComponent {
     const fallenSnake = await this.applyGravity(nextSnake);
 
     if (!fallenSnake) {
-      this.reset('Гравитация утащила змейку в пилу или за край. Попробуй ещё раз.');
+      this.reset('Гравитация утащила змейку в пилу или за край. Попробуй ещё раз — теперь я покажу стрелки.', true);
       return;
     }
 
@@ -307,6 +357,7 @@ export class SnakeGameComponent {
       this.status.set('Используй длину змейки как опору и помни о гравитации.');
     }
 
+    this.moveStep.update((step) => Math.min(step + 1, pathHints.length));
     this.moving.set(false);
   }
 
@@ -315,8 +366,13 @@ export class SnakeGameComponent {
     this.remainingApplePositions.set(apples);
     this.won.set(false);
     this.moving.set(false);
+    this.moveStep.set(0);
     this.status.set(message);
     this.showPathHints.set(showHints);
+  }
+
+  protected continueToSurprise(): void {
+    this.completed.emit();
   }
 
   protected remainingApples(): number {
@@ -346,7 +402,18 @@ export class SnakeGameComponent {
   }
 
   protected pathHint(x: number, y: number): string | null {
-    return pathHints.find((hint) => samePoint(hint, { x, y }))?.arrow ?? null;
+    if (this.moving()) {
+      return null;
+    }
+
+    const hint = pathHints[this.moveStep()];
+    const head = this.snake()[0];
+
+    if (!hint || !samePoint(hint, head) || !samePoint(head, { x, y })) {
+      return null;
+    }
+
+    return hint.arrow;
   }
 
   private isBlocked(point: Point, snake: readonly Point[]): boolean {
@@ -375,7 +442,6 @@ export class SnakeGameComponent {
     this.won.set(true);
     this.moving.set(false);
     this.status.set('Дыра достигнута. Уровень пройден!');
-    this.completed.emit();
   }
 
   private isSupport(x: number, y: number): boolean {
@@ -469,7 +535,7 @@ export class SnakeGameComponent {
             <div class="warm-note">
               <p>{{ currentQuestion().success }}</p>
               <button type="button" class="primary-button" (click)="nextStep()">
-                {{ isLastQuestion() ? 'К маленькому испытанию' : 'Дальше' }}
+                {{ isLastQuestion() ? 'К самому важному дню' : 'Дальше' }}
               </button>
             </div>
           }
@@ -486,6 +552,10 @@ export class SnakeGameComponent {
             <p>
               В тот день я впервые приехал к тебе в Киров и встретил тебя после работы.
               Когда я увидел тебя, то подумал только об одном: какая же ты красивая 💋
+            </p>
+            <p>
+              На мне была белая футболка и чёрные штаны. А ты была одета в синий костьюм
+              и выглядела прекрасно.
             </p>
             <p>
               Ты потянулась ко мне, чтобы обнять. Я немного удивился, но очень обрадовался
@@ -650,7 +720,7 @@ export class SnakeGameComponent {
 
           <div class="intro-footer">
             <button type="button" class="primary-button" (click)="continueAfterJune06()">
-              К сюрпризу)
+              К маленькому испытанию
             </button>
           </div>
         </section>
@@ -662,19 +732,42 @@ export class SnakeGameComponent {
         </section>
       }
 
+      @if (screen() === 'challenge-complete') {
+        <section class="card intro-card memory-card">
+          <span class="paper-tape" aria-hidden="true"></span>
+          <div class="intro-date">Испытание пройдено</div>
+
+          <div class="intro-letter">
+            <h1>Ура, ты справилась!</h1>
+            <p>
+              Я знал, что ты справишься. А дальше у меня для тебя ещё кое-что важное.
+            </p>
+          </div>
+
+          <div class="intro-footer">
+            <button type="button" class="primary-button" (click)="continueAfterChallenge()">
+              К сюрпризу)
+            </button>
+          </div>
+        </section>
+      }
+
       @if (screen() === 'surprise') {
         <section class="card intro-card memory-card">
           <span class="paper-tape" aria-hidden="true"></span>
           <div class="intro-date">Сейчас</div>
 
           <div class="intro-letter">
-            <h1>Ещё один маленький шаг</h1>
+            <h1>Теперь дорога станет короче</h1>
             <p>
-              А сейчас у нас этап переезда. Столько всего меняется, но мне очень хочется
-              сохранить между нами вот это тёплое «мы».
+              Все эти поездки по четыре часа и возвращения обратно к себе домой
+              наконец подходят к концу.
             </p>
             <p>
-              И напоследок у меня для тебя небольшой сюрприз.
+              Потому что теперь мы съезжаемся.
+            </p>
+            <p>
+              И у меня для тебя небольшой сюрприз.
             </p>
           </div>
 
@@ -842,6 +935,11 @@ export class AppComponent {
   }
 
   protected unlockInvitation(): void {
+    this.openScreen('challenge-complete');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  protected continueAfterChallenge(): void {
     this.openScreen('surprise');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
