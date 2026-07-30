@@ -245,7 +245,7 @@ function samePoint(first: Point, second: Point): boolean {
           <button type="button" class="reset-button" (click)="reset()">Начать заново</button>
 
           @if (won()) {
-            <button type="button" class="primary-button" (click)="continueToSurprise()">
+            <button type="button" class="success-button" (click)="continueToSurprise()">
               Я умничка!
             </button>
           }
@@ -882,7 +882,7 @@ export class SnakeGameComponent {
           <div class="intro-date">Сейчас</div>
 
           <div class="intro-letter">
-            <h1>Теперь дорога станет короче</h1>
+            <h1>Наконец-то мы вместе</h1>
             <p>
               Все эти поездки по четыре часа и возвращения обратно к себе домой
               наконец подходят к концу.
